@@ -115,8 +115,8 @@ app.post('/update-tickets-to-zero', async (req, res) => {
       return res.status(400).json({ message: '사용자 ID가 제공되지 않았습니다.' });
     }
 
-    // 사용자의 티켓 수를 0으로 업데이트
-    const result = await db.collection('coupons').updateOne(
+    // 사용자의 모든 쿠폰 티켓 수를 0으로 업데이트
+    const result = await db.collection('coupons').updateMany(
       { userId: userId },
       { $set: { couponsIssued: 0 } }
     );
