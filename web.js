@@ -103,6 +103,31 @@ app.post('/use-ticket', async (req, res) => {
   }
 });
 
+// 티켓을 0으로 설정하는 API
+app.post('/update-tickets-to-zero', async (req, res) => {
+  const { userId } = req.body;
+  try {
+    if (!userId) {
+      return res.status(400).json({ message: '사용자 ID가 제공되지 않았습니다.' });
+    }
+
+    // 사용자의 티켓 수를 0으로 업데이트
+    const result = await db.collection('coupons').updateOne(
+      { userId: userId },
+      { $set: { couponsIssued: 0 } }
+    );
+
+    if (result.modifiedCount > 0) {
+      return res.status(200).json({ message: '티켓이 성공적으로 0으로 설정되었습니다.' });
+    } else {
+      return res.status(404).json({ message: '해당 사용자의 티켓을 찾을 수 없습니다.' });
+    }
+  } catch (error) {
+    console.error('티켓을 0으로 설정하는 중 오류 발생:', error);
+    return res.status(500).json({ message: '서버 오류로 인해 티켓을 0으로 설정하지 못했습니다.' });
+  }
+});
+
 // 서버 실행
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
