@@ -128,6 +128,25 @@ app.post('/update-tickets-to-zero', async (req, res) => {
   }
 });
 
+app.post('/check-tickets', async (req, res) => {
+  const { userId } = req.body;
+  try {
+    // 동일한 userId를 가진 모든 쿠폰을 조회
+    const userCoupons = await db.collection('coupons').find({ userId }).toArray();
+
+    if (userCoupons.length > 0) {
+      // 쿠폰 발급 수량을 합산
+      const totalTickets = userCoupons.reduce((total, coupon) => total + coupon.couponsIssued, 0);
+      res.status(200).json({ tickets: totalTickets });
+    } else {
+      res.status(200).json({ tickets: 0 }); // 쿠폰이 없으면 0 반환
+    }
+  } catch (error) {
+    console.error('티켓 확인 오류:', error);
+    res.status(500).json({ message: '티켓 확인 중 오류가 발생했습니다.' });
+  }
+});
+
 // 서버 실행
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
