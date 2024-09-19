@@ -69,15 +69,19 @@ app.post('/issue-coupon', async (req, res) => {
   }
 });
 
-// 사용자의 티켓 확인 API
+// 동일한 userId를 가진 쿠폰을 합산하여 티켓 확인 API
 app.post('/check-tickets', async (req, res) => {
   const { userId } = req.body;
   try {
-    const user = await db.collection('coupons').findOne({ userId });
-    if (user && user.couponsIssued > 0) {
-      res.status(200).json({ tickets: user.couponsIssued });
+    // 동일한 userId를 가진 모든 쿠폰을 조회
+    const userCoupons = await db.collection('coupons').find({ userId }).toArray();
+
+    if (userCoupons.length > 0) {
+      // 쿠폰 발급 수량을 합산
+      const totalTickets = userCoupons.reduce((total, coupon) => total + coupon.couponsIssued, 0);
+      res.status(200).json({ tickets: totalTickets });
     } else {
-      res.status(200).json({ tickets: 0 });
+      res.status(200).json({ tickets: 0 }); // 쿠폰이 없으면 0 반환
     }
   } catch (error) {
     console.error('티켓 확인 오류:', error);
@@ -125,25 +129,6 @@ app.post('/update-tickets-to-zero', async (req, res) => {
   } catch (error) {
     console.error('티켓을 0으로 설정하는 중 오류 발생:', error);
     return res.status(500).json({ message: '서버 오류로 인해 티켓을 0으로 설정하지 못했습니다.' });
-  }
-});
-
-app.post('/check-tickets', async (req, res) => {
-  const { userId } = req.body;
-  try {
-    // 동일한 userId를 가진 모든 쿠폰을 조회
-    const userCoupons = await db.collection('coupons').find({ userId }).toArray();
-
-    if (userCoupons.length > 0) {
-      // 쿠폰 발급 수량을 합산
-      const totalTickets = userCoupons.reduce((total, coupon) => total + coupon.couponsIssued, 0);
-      res.status(200).json({ tickets: totalTickets });
-    } else {
-      res.status(200).json({ tickets: 0 }); // 쿠폰이 없으면 0 반환
-    }
-  } catch (error) {
-    console.error('티켓 확인 오류:', error);
-    res.status(500).json({ message: '티켓 확인 중 오류가 발생했습니다.' });
   }
 });
 
