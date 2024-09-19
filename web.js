@@ -33,7 +33,7 @@ app.post('/issue-coupon', async (req, res) => {
     // 중복된 주문번호 확인
     const existingCoupon = await db.collection('coupons').findOne({ orderNumbers });
     if (existingCoupon) {
-      return res.status(400).json({ message: '이 주문번호에 대해서는 이미 쿠폰이 발급되었습니다.' });
+      return res.status(400).json({ message: '주문번호 중복' });
     }
 
     // 결제 금액에 따른 쿠폰 발급 수량 결정
@@ -66,6 +66,40 @@ app.post('/issue-coupon', async (req, res) => {
   } catch (error) {
     console.error('쿠폰 발급 오류:', error);
     res.status(500).json({ message: '쿠폰 발급 중 오류가 발생했습니다.' });
+  }
+});
+
+// 사용자의 티켓 확인 API
+app.post('/check-tickets', async (req, res) => {
+  const { userId } = req.body;
+  try {
+    const user = await db.collection('coupons').findOne({ userId });
+    if (user && user.couponsIssued > 0) {
+      res.status(200).json({ tickets: user.couponsIssued });
+    } else {
+      res.status(200).json({ tickets: 0 });
+    }
+  } catch (error) {
+    console.error('티켓 확인 오류:', error);
+    res.status(500).json({ message: '티켓 확인 중 오류가 발생했습니다.' });
+  }
+});
+
+// 티켓 사용 및 차감 API
+app.post('/use-ticket', async (req, res) => {
+  const { userId } = req.body;
+  try {
+    const user = await db.collection('coupons').findOne({ userId });
+    if (user && user.couponsIssued > 0) {
+      // 티켓 1장 차감
+      await db.collection('coupons').updateOne({ userId }, { $inc: { couponsIssued: -1 } });
+      res.status(200).json({ message: '티켓 1장이 차감되었습니다.' });
+    } else {
+      res.status(400).json({ message: '티켓이 부족합니다.' });
+    }
+  } catch (error) {
+    console.error('티켓 차감 오류:', error);
+    res.status(500).json({ message: '티켓 차감 중 오류가 발생했습니다.' });
   }
 });
 
